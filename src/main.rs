@@ -18,6 +18,13 @@ impl UndirectedEdge{
             _ => panic!("Given node {} not part of edge {}--{}", n.id, leftid, rightid)
         }
     }
+
+    fn is_adjacent(&self, other: UndirectedEdge) -> bool {
+        self.end_nodes.0.id == other.end_nodes.0.id ||
+            self.end_nodes.0.id == other.end_nodes.1.id ||
+            self.end_nodes.1.id == other.end_nodes.0.id ||
+            self.end_nodes.1.id == other.end_nodes.1.id 
+    }
 }
 
 struct UndirectedGraph{
@@ -52,14 +59,20 @@ fn main(){
     let e4: UndirectedEdge = UndirectedEdge { end_nodes: (n3, n4), length: 2.0 };
     let e5: UndirectedEdge = UndirectedEdge { end_nodes: (n3, n4), length: 2.0 };
 
+    let e6: UndirectedEdge = UndirectedEdge { end_nodes: (n3, n1), length: 2.0 };
+    let e7: UndirectedEdge = UndirectedEdge { end_nodes: (n1, n2), length: 2.0 };
+
     let g1: UndirectedGraph = UndirectedGraph { edges: vec![e1,e2,e3,e4] };
 
     g1.print();
 
     println!("{}--{}", e5.end_nodes.0.id, e5.end_nodes.1.id);
 
-    println!("{}", e5.other_end(n3).id);
-    println!("{}", e5.other_end(n4).id);
-    println!("{}", e5.other_end(n1).id);
+    // println!("{}", e5.other_end(n3).id);
+    // println!("{}", e5.other_end(n4).id);
+    // println!("{}", e5.other_end(n1).id);
+
+    println!("{}", e5.is_adjacent(e6));
+    println!("{}", e5.is_adjacent(e7));
 
 }
