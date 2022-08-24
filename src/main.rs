@@ -8,6 +8,18 @@ struct UndirectedEdge{
     length: f64
 }
 
+impl UndirectedEdge{
+    fn other_end(&self, n: Node) -> Node {
+        let leftid = self.end_nodes.0.id;
+        let rightid = self.end_nodes.1.id;
+        match n.id {
+            a if a == leftid => self.end_nodes.1,
+            b if b == rightid => self.end_nodes.0,
+            _ => panic!("Given node {} not part of edge {}--{}", n.id, leftid, rightid)
+        }
+    }
+}
+
 struct UndirectedGraph{
     edges: Vec<UndirectedEdge>,
 }
@@ -43,5 +55,11 @@ fn main(){
     let g1: UndirectedGraph = UndirectedGraph { edges: vec![e1,e2,e3,e4] };
 
     g1.print();
+
+    println!("{}--{}", e5.end_nodes.0.id, e5.end_nodes.1.id);
+
+    println!("{}", e5.other_end(n3).id);
+    println!("{}", e5.other_end(n4).id);
+    println!("{}", e5.other_end(n1).id);
 
 }
