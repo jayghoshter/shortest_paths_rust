@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 struct UndirectedEdge{
     end_nodes: (i32, i32),
     length: f64
@@ -22,6 +25,39 @@ impl UndirectedEdge{
 
 struct UndirectedGraph{
     edges: Vec<UndirectedEdge>,
+}
+
+impl UndirectedGraph{
+    fn get_node_neighbors_map(&self) -> HashMap::<i32, HashSet<i32>> {
+        let mut neighbors = HashMap::<i32, HashSet<i32>>::new();
+
+        for e in &self.edges {
+            let (left, right) = e.end_nodes;
+            let lhs = HashSet::from([left]);
+            let rhs = HashSet::from([right]);
+
+            neighbors.entry(left)
+                .and_modify(|e| *e = e.union(&rhs).copied().collect::<HashSet<i32>>() )
+                .or_insert(HashSet::from([right]));
+
+            neighbors.entry(right)
+                .and_modify(|e| *e = e.union(&lhs).copied().collect::<HashSet<i32>>() )
+                .or_insert(HashSet::from([left]));
+        };
+
+        return neighbors
+    }
+
+    fn get_nodes(&self) -> HashSet<i32> {
+        let mut all_nodes = HashSet::new();
+
+        for e in &self.edges {
+            all_nodes.insert(e.end_nodes.0);
+            all_nodes.insert(e.end_nodes.1);
+        }
+
+        return all_nodes
+    }
 }
 
 struct UndirectedPath{
@@ -52,6 +88,9 @@ fn main(){
     let g1: UndirectedGraph = UndirectedGraph { edges: vec![e1,e2,e3,e4] };
 
     g1.print();
+    let node_map = g1.get_node_neighbors_map();
+
+    println!("{node_map:?}");
 
     println!("{}--{}", e5.end_nodes.0, e5.end_nodes.1);
 
@@ -59,7 +98,8 @@ fn main(){
     // println!("{}", e5.other_end(4));
     // println!("{}", e5.other_end(1));
 
-    println!("{}", e5.is_adjacent(e6));
-    println!("{}", e5.is_adjacent(e7));
+    // println!("{}", e5.is_adjacent(e6));
+    // println!("{}", e5.is_adjacent(e7));
+
 
 }
