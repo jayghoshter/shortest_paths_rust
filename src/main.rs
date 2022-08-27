@@ -61,11 +61,17 @@ impl UnPath{
     }
 
     fn print(&self){
-        print!("Path with nodes: ");
-        for i in 0..self.nodes.len() {
-            print!("{},", self.nodes[i]);
+        for i in 0..self.nodes.len()-1 {
+            print!("{}->", self.nodes[i]);
         }
-        println!("")
+        print!("{} \n", self.nodes.last().unwrap());
+    }
+
+    fn print_with_length(&self, g: &UnGraph) {
+        for i in 0..self.nodes.len()-1 {
+            print!("{}->", self.nodes[i]);
+        }
+        print!("{}: {} \n", self.nodes.last().unwrap(), self.length(g));
     }
 
     fn explore(&self, graph: &UnGraph, length_limit:f64) -> Vec<UnPath> {
@@ -170,7 +176,6 @@ impl UnGraph{
             paths_to_explore = new_paths;
         }
 
-        println!("Done!");
         return results
     }
 }
@@ -191,23 +196,14 @@ fn main(){
 
     g1.print();
 
-    for item in &g1.node_neighbors_map {
-        println!("{}: {:?}", item.0, item.1);
-    }
-
-    for item in &g1.edge_length_map {
-        println!("{:?}: {:?}", item.0, item.1);
-    }
-
-    //
     // let p : UnPath =  UnPath {nodes: vec![1,2,4]};
     // println!("{:?}", p.edges());
     //
     // let len = p.length(&g1);
     // println!("{len}");
 
-    println!("{:?}", g1.compute_shortest_paths(1, 4, 1.0));
-    println!("{:?}", g2.compute_shortest_paths(1, 4, 1.0));
+    g1.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
+    g2.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
 
     // let node_map = g1.get_node_neighbors_map();
 
