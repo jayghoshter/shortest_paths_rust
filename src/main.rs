@@ -31,7 +31,6 @@ impl UnEdge{
     }
 }
 
-
 #[derive(Debug,Clone)]
 struct UnPath{
     nodes: Vec<i32>,
@@ -74,16 +73,21 @@ impl UnPath{
         print!("{}: {} \n", self.nodes.last().unwrap(), self.length(g));
     }
 
-    fn explore(&self, graph: &UnGraph, length_limit:f64) -> Vec<UnPath> {
+    fn explore(&self, graph: &UnGraph, length_limit:Option<f64>) -> Vec<UnPath> {
         let end_node = self.nodes.last().unwrap();
         let mut new_paths: Vec<UnPath> = vec![];
 
         for next_node in graph.node_neighbors_map.get(&end_node).unwrap() {
             let new_path = self + *next_node;
 
-            if new_path.length(graph) <= length_limit { 
-                new_paths.push(new_path);
-            }
+            match length_limit {
+                None => new_paths.push(new_path),
+                Some(f) => if new_path.length(graph) <= f {new_paths.push(new_path)}
+            };
+
+            // if new_path.length(graph) <= length_limit { 
+            //     new_paths.push(new_path);
+            // }
         }
 
         new_paths
@@ -160,11 +164,22 @@ impl UnGraph{
 
         let mut paths_to_explore: Vec<UnPath> = vec![UnPath{ nodes: vec![start] }];
         let mut results: Vec<UnPath> = vec![];
-        let length_limit:f64 = 0.0;
+        let mut length_limit:Option<f64>;
+        let mut count: usize = 0;
 
         while paths_to_explore.len() > 0 {
+            count += 1;
+
+            let current_min_path = results.iter().min_by(|a,b| a.length(&self).partial_cmp(&b.length(&self)).unwrap());
+
+            length_limit = match current_min_path {
+                None => None,
+                Some(p) => Some(p.length(&self) * length_tol)
+            };
+
             let new_paths: Vec<_> = paths_to_explore.par_iter()
-                .map(|p| p.explore(&self, 2.0)).into_par_iter().flatten().collect();
+                .map(|p| p.explore(&self, length_limit)).into_par_iter().flatten().collect();
+
 
             // TODO: Parallelize
             for path in &new_paths {
@@ -174,8 +189,28 @@ impl UnGraph{
             }
 
             paths_to_explore = new_paths;
+
+            // Early break for disconnected graphs
+            if &self.edges.len() < &self.node_neighbors_map.keys().len() {
+                if &count == &self.node_neighbors_map.keys().len() {
+                    if results.len() == 0 {
+                        return vec![]
+                    }
+                }
+            }
         }
 
+        // sort
+        results = results.into_iter().sorted_by(|a,b| a.length(&self).partial_cmp(&b.length(&self)).unwrap()).collect_vec();
+
+        length_limit = match results.first() {
+            None => None,
+            Some(p) => Some(p.length(&self) * length_tol)
+        };
+
+        // prune
+        results = results.into_iter().filter(|p| p.length(&self) <= length_limit.unwrap()).collect_vec();
+        
         return results
     }
 }
@@ -187,37 +222,12 @@ fn main(){
     let e3: UnEdge = UnEdge { end_nodes: (2, 4), length: 1.0 };
     let e4: UnEdge = UnEdge { end_nodes: (3, 4), length: 2.0 };
 
-    // let e6: UnEdge = UnEdge { end_nodes: (3, 1), length: 2.0 };
-    // let e7: UnEdge = UnEdge { end_nodes: (1, 2), length: 2.0 };
-
     let g1: UnGraph = UnGraph::new(vec![e1,e2,e3,e4]) ;
 
     let g2: UnGraph = UnGraph::from_tuples(vec![(1,2,1.0), (2,4,1.0), (1,3,1.0), (3,4,2.0) ]);
 
     g1.print();
 
-    // let p : UnPath =  UnPath {nodes: vec![1,2,4]};
-    // println!("{:?}", p.edges());
-    //
-    // let len = p.length(&g1);
-    // println!("{len}");
-
-    g1.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
-    g2.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
-
-    // let node_map = g1.get_node_neighbors_map();
-
-    // println!("{node_map:?}");
-
-    // let e5: UnEdge = UnEdge { end_nodes: (3, 4), length: 2.0 };
-    // println!("{}--{}", e5.end_nodes.0, e5.end_nodes.1);
-
-    // println!("{}", e5.other_end(3));
-    // println!("{}", e5.other_end(4));
-    // println!("{}", e5.other_end(1));
-
-    // println!("{}", e5.is_adjacent(e6));
-    // println!("{}", e5.is_adjacent(e7));
-
+    g1.compute_shortest_paths(1, 4, 2.0).iter().for_each(|p| p.print_with_length(&g2));
+    // g2.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
 }
-
