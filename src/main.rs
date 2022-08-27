@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops;
+use rayon::prelude::*;
+use itertools::Itertools;
 
 struct UndirectedEdge{
     end_nodes: (i32, i32),
@@ -21,6 +23,55 @@ impl UndirectedEdge{
             self.end_nodes.0 == other.end_nodes.1 ||
             self.end_nodes.1 == other.end_nodes.0 ||
             self.end_nodes.1 == other.end_nodes.1 
+    }
+}
+
+
+#[derive(Debug)]
+struct UndirectedPath{
+    nodes: Vec<i32>,
+}
+
+impl ops::Add<i32> for &UndirectedPath{
+    type Output = UndirectedPath;
+
+    fn add(self, _rhs: i32) -> UndirectedPath {
+        UndirectedPath { nodes: [(*self.nodes).to_vec(),  [_rhs].to_vec()].concat()}
+    }
+}
+
+impl UndirectedPath{
+    fn edges(&self) -> Vec<(&i32, &i32)> {
+        self.nodes.iter().circular_tuple_windows::<(_,_)>().collect()
+    }
+
+    fn length(&self, graph: &UndirectedGraph) -> f64 {
+        let mut sum:f64 = 0.0;
+
+        for item in self.edges() {
+        }
+
+        return 0.0;
+    }
+
+    fn print(&self){
+        print!("Path with nodes: ");
+        for i in 0..self.nodes.len() {
+            print!("{},", self.nodes[i]);
+        }
+        println!("")
+    }
+
+    fn explore(&self, node_map: &HashMap<i32, HashSet<i32>>) -> Vec<UndirectedPath> {
+        let end_node = self.nodes.last().unwrap();
+        let mut new_paths: Vec<UndirectedPath> = vec![];
+
+        for next_node in node_map.get(&end_node).unwrap() {
+            let new_path = self + *next_node;
+            new_paths.push(new_path);
+        }
+
+        new_paths
     }
 }
 
@@ -59,31 +110,7 @@ impl UndirectedGraph{
 
         return all_nodes
     }
-}
 
-struct UndirectedPath{
-    nodes: Vec<i32>,
-}
-
-impl ops::Add<i32> for &UndirectedPath{
-    type Output = UndirectedPath;
-
-    fn add(self, _rhs: i32) -> UndirectedPath {
-        UndirectedPath { nodes: [(*self.nodes).to_vec(),  [_rhs].to_vec()].concat()}
-    }
-}
-
-impl UndirectedPath{
-    fn print(&self){
-        print!("Path with nodes: ");
-        for i in 0..self.nodes.len() {
-            print!("{},", self.nodes[i]);
-        }
-        println!("")
-    }
-}
-
-impl UndirectedGraph{
     fn print(&self){
         print!("Graph with Edges: ");
         for i in 0..self.edges.len() {
