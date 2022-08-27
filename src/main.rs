@@ -1,3 +1,14 @@
+/*************************************************************************************************************
+ * This program was written to get started with learning rust. It is based on a coding challenge I
+ * was recently given. The code is by no means perfect, but the algorithm should be functional.
+ * Tests and helper functions should be added shortly. 
+ *
+ * The goal of the program is to take an undirected graph, and find all the paths (sorted) between
+ * a start and end node that are less than or equal to a length limit specified by length_tol * shortest path.
+ * Cyclic paths should be allowed, i.e., 1-2-1-2-4 and 1-3-1-2-4 etc should be valid paths between
+ * nodes 1 and 4 as long as the total path length is within the limit.
+ *************************************************************************************************************/
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops;
@@ -227,7 +238,9 @@ fn main(){
     let g2: UnGraph = UnGraph::from_tuples(vec![(1,2,1.0), (2,4,1.0), (1,3,1.0), (3,4,2.0) ]);
 
     g1.print();
+    g1.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
 
-    g1.compute_shortest_paths(1, 4, 2.0).iter().for_each(|p| p.print_with_length(&g2));
-    // g2.compute_shortest_paths(1, 4, 1.0).iter().for_each(|p| p.print_with_length(&g2));
+    g2.print();
+    g2.compute_shortest_paths(1, 4, 2.0).iter().for_each(|p| p.print_with_length(&g2));
+
 }
