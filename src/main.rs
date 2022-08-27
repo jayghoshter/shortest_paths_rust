@@ -120,6 +120,13 @@ impl UnGraph{
         UnGraph { edges: _edges, edge_length_map: _edge_length_map, node_neighbors_map: neighbors } 
     }
 
+    fn from_tuples(_edge_tuples: Vec<(i32, i32, f64)>) -> UnGraph{
+
+        let _edges : Vec<UnEdge> = _edge_tuples.iter().map(|t| UnEdge{end_nodes: (t.0, t.1), length: t.2}).collect();
+
+        UnGraph::new(_edges)
+    }
+
     fn get_nodes(&self) -> HashSet<i32> {
         let mut all_nodes = HashSet::new();
 
@@ -180,6 +187,8 @@ fn main(){
 
     let g1: UnGraph = UnGraph::new(vec![e1,e2,e3,e4]) ;
 
+    let g2: UnGraph = UnGraph::from_tuples(vec![(1,2,1.0), (2,4,1.0), (1,3,1.0), (3,4,2.0) ]);
+
     g1.print();
 
     for item in &g1.node_neighbors_map {
@@ -189,6 +198,7 @@ fn main(){
     for item in &g1.edge_length_map {
         println!("{:?}: {:?}", item.0, item.1);
     }
+
     //
     // let p : UnPath =  UnPath {nodes: vec![1,2,4]};
     // println!("{:?}", p.edges());
@@ -197,6 +207,7 @@ fn main(){
     // println!("{len}");
 
     println!("{:?}", g1.compute_shortest_paths(1, 4, 1.0));
+    println!("{:?}", g2.compute_shortest_paths(1, 4, 1.0));
 
     // let node_map = g1.get_node_neighbors_map();
 
