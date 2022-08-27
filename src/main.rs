@@ -27,7 +27,7 @@ impl UndirectedEdge{
 }
 
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct UndirectedPath{
     nodes: Vec<i32>,
 }
@@ -42,16 +42,17 @@ impl ops::Add<i32> for &UndirectedPath{
 
 impl UndirectedPath{
     fn edges(&self) -> Vec<(&i32, &i32)> {
-        self.nodes.iter().circular_tuple_windows::<(_,_)>().collect()
+        self.nodes.iter().tuple_windows::<(_,_)>().collect()
     }
 
     fn length(&self, graph: &UndirectedGraph) -> f64 {
         let mut sum:f64 = 0.0;
 
         for item in self.edges() {
+            sum += graph.edge_length_map.get(&(*item.0, *item.1)).unwrap()
         }
 
-        return 0.0;
+        sum
     }
 
     fn print(&self){
@@ -62,13 +63,16 @@ impl UndirectedPath{
         println!("")
     }
 
-    fn explore(&self, node_map: &HashMap<i32, HashSet<i32>>) -> Vec<UndirectedPath> {
+    fn explore(&self, graph: &UndirectedGraph, length_limit:f64) -> Vec<UndirectedPath> {
         let end_node = self.nodes.last().unwrap();
         let mut new_paths: Vec<UndirectedPath> = vec![];
 
-        for next_node in node_map.get(&end_node).unwrap() {
+        for next_node in graph.node_neighbors_map.get(&end_node).unwrap() {
             let new_path = self + *next_node;
-            new_paths.push(new_path);
+
+            if new_path.length(graph) <= length_limit { 
+                new_paths.push(new_path);
+            }
         }
 
         new_paths
@@ -77,13 +81,24 @@ impl UndirectedPath{
 
 struct UndirectedGraph{
     edges: Vec<UndirectedEdge>,
+    edge_length_map: HashMap::<(i32,i32), f64>,
+    node_neighbors_map: HashMap::<i32, HashSet<i32>>
 }
 
 impl UndirectedGraph{
-    fn get_node_neighbors_map(&self) -> HashMap::<i32, HashSet<i32>> {
+
+    fn new(_edges: Vec<UndirectedEdge>) -> UndirectedGraph {
+
+        let mut _edge_length_map: HashMap::<(i32,i32), f64> = HashMap::<(i32, i32), f64>::new() ;
+
+        for e in &_edges {
+            _edge_length_map.insert(e.end_nodes, e.length);
+            _edge_length_map.insert((e.end_nodes.1, e.end_nodes.0), e.length);
+        }
+
         let mut neighbors = HashMap::<i32, HashSet<i32>>::new();
 
-        for e in &self.edges {
+        for e in &_edges {
             let (left, right) = e.end_nodes;
             let lhs = HashSet::from([left]);
             let rhs = HashSet::from([right]);
@@ -97,7 +112,7 @@ impl UndirectedGraph{
                 .or_insert(HashSet::from([left]));
         };
 
-        return neighbors
+        UndirectedGraph { edges: _edges, edge_length_map: _edge_length_map, node_neighbors_map: neighbors } 
     }
 
     fn get_nodes(&self) -> HashSet<i32> {
@@ -118,6 +133,34 @@ impl UndirectedGraph{
         }
         println!("")
     }
+
+    fn compute_shortest_paths(&self, start:i32, end:i32, length_tol:f64) -> Vec<UndirectedPath> {
+
+        if length_tol < 1.0 {
+            return vec![]
+        }
+
+        let mut paths_to_explore: Vec<UndirectedPath> = vec![UndirectedPath{ nodes: vec![start] }];
+        let mut results: Vec<UndirectedPath> = vec![];
+        let length_limit:f64 = 0.0;
+
+        while paths_to_explore.len() > 0 {
+            let new_paths: Vec<_> = paths_to_explore.par_iter()
+                .map(|p| p.explore(&self, 2.0)).into_par_iter().flatten().collect();
+
+            // TODO: Parallelize
+            for path in &new_paths {
+                if path.nodes.last().unwrap() == &end {
+                    results.push(path.clone());
+                }
+            }
+
+            paths_to_explore = new_paths;
+        }
+
+        println!("Done!");
+        return results
+    }
 }
 
 fn main(){
@@ -130,15 +173,27 @@ fn main(){
     // let e6: UndirectedEdge = UndirectedEdge { end_nodes: (3, 1), length: 2.0 };
     // let e7: UndirectedEdge = UndirectedEdge { end_nodes: (1, 2), length: 2.0 };
 
-    let g1: UndirectedGraph = UndirectedGraph { edges: vec![e1,e2,e3,e4] };
+    let g1: UndirectedGraph = UndirectedGraph::new(vec![e1,e2,e3,e4]) ;
 
     g1.print();
-    let node_map = g1.get_node_neighbors_map();
 
-    let start_path  = UndirectedPath{ nodes: [1].to_vec()};
+    for item in &g1.node_neighbors_map {
+        println!("{}: {:?}", item.0, item.1);
+    }
 
-    let new_paths = explore_path(start_path, node_map);
+    for item in &g1.edge_length_map {
+        println!("{:?}: {:?}", item.0, item.1);
+    }
+    //
+    // let p : UndirectedPath =  UndirectedPath {nodes: vec![1,2,4]};
+    // println!("{:?}", p.edges());
+    //
+    // let len = p.length(&g1);
+    // println!("{len}");
 
+    println!("{:?}", g1.compute_shortest_paths(1, 4, 1.0));
+
+    // let node_map = g1.get_node_neighbors_map();
 
     // println!("{node_map:?}");
 
@@ -155,14 +210,3 @@ fn main(){
 
 }
 
-fn explore_path(path: UndirectedPath, node_map: HashMap<i32, HashSet<i32>>) -> Vec<UndirectedPath> {
-    let end_node = path.nodes.last().unwrap();
-    let mut new_paths: Vec<UndirectedPath> = vec![];
-
-    for next_node in node_map.get(&end_node).unwrap() {
-        let new_path = &path + *next_node;
-        new_paths.push(new_path);
-    }
-
-    new_paths
-}
