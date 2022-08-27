@@ -10,6 +10,11 @@ struct UndirectedEdge{
 }
 
 impl UndirectedEdge{
+
+    fn new(end_nodes:(i32,i32), length:f64) -> UndirectedEdge{
+        UndirectedEdge { end_nodes: end_nodes, length: length}
+    }
+
     fn other_end(&self, n: i32) -> i32 {
         match n {
             a if a == self.end_nodes.0 => self.end_nodes.1,
@@ -206,7 +211,6 @@ fn main(){
 
     // println!("{}", e5.is_adjacent(e6));
     // println!("{}", e5.is_adjacent(e7));
-
 
 }
 
